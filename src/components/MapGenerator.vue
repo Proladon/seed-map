@@ -142,7 +142,7 @@ onMounted(() => {
 
 <style scoped>
 .map-generator {
-  margin: 2em auto;
+  margin: 0 auto;
   max-width: 900px;
   text-align: left;
 }
@@ -165,6 +165,13 @@ onMounted(() => {
   .map-preview {
     flex: 2;
   }
+}
+
+.controls-panel {
+  background-color: var(--map-container-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px var(--shadow);
+  padding: 1.2em;
 }
 
 .controls {
@@ -199,24 +206,32 @@ onMounted(() => {
 .seed-input-container input {
   flex: 1;
   margin-right: 0.5em;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
 .random-btn {
   padding: 0.2em 0.5em;
   font-size: 1.2em;
   cursor: pointer;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
 input,
 select {
   padding: 0.5em;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
+  background-color: var(--card-bg);
+  color: var(--text-color);
 }
 
 .generate-btn {
   margin-top: 0.5em;
-  background-color: #4caf50;
+  background-color: var(--button-primary);
   color: white;
   border: none;
   padding: 0.7em 1em;
@@ -227,7 +242,7 @@ select {
 }
 
 .generate-btn:hover {
-  background-color: #45a049;
+  background-color: var(--button-hover);
 }
 
 .generate-btn:disabled {
@@ -238,6 +253,7 @@ select {
 .info-text {
   margin-top: 0.5em;
   font-size: 0.9em;
-  color: #666;
+  color: var(--text-color);
+  opacity: 0.8;
 }
 </style>

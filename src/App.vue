@@ -69,7 +69,7 @@ function toggleDarkMode() {
 
 <style>
 :root {
-  --bg-color: #f5f5f7;
+  --bg-color: #f8f9fa;
   --text-color: #333;
   --card-bg: #fff;
   --border-color: #e0e0e0;
@@ -79,19 +79,21 @@ function toggleDarkMode() {
   --button-primary: #4caf50;
   --button-hover: #45a049;
   --shadow: rgba(0, 0, 0, 0.1);
+  --map-container-bg: #ffffff;
 }
 
 .dark-theme {
-  --bg-color: #1e1e1e;
+  --bg-color: #121212;
   --text-color: #e0e0e0;
-  --card-bg: #2d2d2d;
+  --card-bg: #1e1e1e;
   --border-color: #444;
-  --header-bg: #2d2d2d;
+  --header-bg: #1a1a1a;
   --header-text: #f0f0f0;
-  --footer-bg: #252525;
+  --footer-bg: #1a1a1a;
   --button-primary: #5bc75f;
   --button-hover: #4db351;
   --shadow: rgba(0, 0, 0, 0.3);
+  --map-container-bg: #2d2d2d;
 }
 
 * {

@@ -310,9 +310,9 @@ defineExpose({
   flex-direction: column;
   gap: 1em;
   padding: 1em;
-  background-color: #f7f7f7;
+  background-color: var(--map-container-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px var(--shadow);
   height: 100%;
 }
 
@@ -320,6 +320,10 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: var(--card-bg);
+  padding: 0.6em;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
 }
 
 .zoom-controls,
@@ -330,18 +334,19 @@ defineExpose({
 
 .control-btn {
   padding: 0.3em 0.7em;
-  border: 1px solid #ccc;
-  background: white;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
   border-radius: 4px;
   cursor: pointer;
   font-size: 1em;
   display: flex;
   align-items: center;
   gap: 0.3em;
+  color: var(--text-color);
 }
 
 .control-btn:hover {
-  background: #f0f0f0;
+  background: rgba(125, 125, 125, 0.1);
 }
 
 .control-btn .icon {
@@ -354,15 +359,19 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .map-canvas {
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   background: white;
   display: block;
   cursor: grab;
   max-width: 100%;
   max-height: 100%;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
 }
 
 .map-canvas:active {

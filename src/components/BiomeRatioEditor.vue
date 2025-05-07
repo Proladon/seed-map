@@ -145,35 +145,114 @@ function emitRatios() {
 
 <style scoped>
 .biome-ratio-editor {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
   padding: 1em;
   border-radius: 8px;
-  max-width: 350px;
   margin-bottom: 1em;
+  background-color: var(--card-bg);
 }
+
+h3 {
+  margin-top: 0;
+  color: var(--text-color);
+  font-size: 1.1em;
+  margin-bottom: 0.8em;
+}
+
 .biome-row {
   display: flex;
   align-items: center;
   gap: 0.5em;
-  margin-bottom: 0.5em;
+  margin-bottom: 0.8em;
 }
+
 .biome-label {
   width: 3em;
+  color: var(--text-color);
 }
+
 .biome-value {
   width: 3em;
   text-align: right;
+  color: var(--text-color);
 }
+
+/* 自定義滑動條的樣式 */
+input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #e0e0e0;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--button-primary);
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--button-hover);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--button-primary);
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+  border: 0;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: var(--button-hover);
+}
+
 .total {
-  margin-top: 0.5em;
+  margin-top: 0.8em;
   font-weight: bold;
+  color: var(--text-color);
 }
+
 .button-group {
   display: flex;
   gap: 0.5em;
-  margin-top: 0.5em;
+  margin-top: 1em;
 }
+
 button {
-  padding: 0.3em 1em;
+  padding: 0.4em 1em;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-color);
+  transition: all 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background-color: rgba(125, 125, 125, 0.1);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button:last-child {
+  background-color: var(--button-primary);
+  color: white;
+  border-color: var(--button-primary);
+}
+
+button:last-child:hover {
+  background-color: var(--button-hover);
 }
 </style>
