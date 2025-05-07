@@ -13,7 +13,10 @@
       <span class="biome-value">{{ localRatios[key] }}%</span>
     </div>
     <div class="total">總和：{{ total }}%</div>
-    <button :disabled="total !== 100" @click="emitRatios">套用比例</button>
+    <div class="button-group">
+      <button :disabled="total !== 100" @click="emitRatios">套用比例</button>
+      <button @click="generateRandomRatios">隨機比例</button>
+    </div>
   </div>
 </template>
 
@@ -69,6 +72,72 @@ function onInput() {
   }
 }
 
+/**
+ * 生成隨機的生態比例，確保總和為100%，並自動套用
+ */
+function generateRandomRatios() {
+  // 生成隨機比例，但保留一些合理的約束
+  const keys = Object.keys(localRatios.value)
+
+  // 為每個生態域設定最小值和最大值
+  const minValues = {
+    [BIOMES.OCEAN]: 25, // 海洋至少占25%
+    [BIOMES.PLAINS]: 20, // 平原至少占20%
+    [BIOMES.DESERT]: 10, // 沙漠至少占10%
+    [BIOMES.VILLAGE]: 1, // 村莊至少占1%
+  }
+
+  const maxValues = {
+    [BIOMES.OCEAN]: 60, // 海洋最多60%
+    [BIOMES.PLAINS]: 50, // 平原最多50%
+    [BIOMES.DESERT]: 30, // 沙漠最多30%
+    [BIOMES.VILLAGE]: 5, // 村莊最多5%
+  }
+
+  // 先分配最小值
+  let remaining = 100
+  for (const key of keys) {
+    localRatios.value[key] = minValues[key]
+    remaining -= minValues[key]
+  }
+
+  // 剩餘部分隨機分配，但尊重最大值限制
+  while (remaining > 0) {
+    // 選擇一個隨機生態域
+    const randomIndex = Math.floor(Math.random() * keys.length)
+    const key = keys[randomIndex]
+
+    // 檢查是否已達到最大值
+    if (localRatios.value[key] < maxValues[key]) {
+      // 增加1-3之間的隨機值，或剩餘值（取較小者）
+      const increment = Math.min(Math.floor(Math.random() * 3) + 1, remaining)
+
+      // 確保不超過最大值
+      const newValue = Math.min(
+        localRatios.value[key] + increment,
+        maxValues[key]
+      )
+      const actualIncrement = newValue - localRatios.value[key]
+
+      localRatios.value[key] = newValue
+      remaining -= actualIncrement
+    }
+  }
+
+  // 四捨五入並確保總和為100
+  let sum = 0
+  for (const key of keys.slice(0, -1)) {
+    localRatios.value[key] = Math.round(localRatios.value[key])
+    sum += localRatios.value[key]
+  }
+
+  // 最後一個值確保總和為100
+  localRatios.value[keys[keys.length - 1]] = 100 - sum
+
+  // 自動套用新的比例
+  emitRatios()
+}
+
 function emitRatios() {
   emit("update:ratios", { ...localRatios.value })
 }
@@ -99,8 +168,12 @@ function emitRatios() {
   margin-top: 0.5em;
   font-weight: bold;
 }
-button {
+.button-group {
+  display: flex;
+  gap: 0.5em;
   margin-top: 0.5em;
+}
+button {
   padding: 0.3em 1em;
 }
 </style>
