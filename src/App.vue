@@ -1,5 +1,5 @@
 <script setup>
-import MapGenerator from './components/MapGenerator.vue'
+import MapGenerator from "./components/MapGenerator.vue"
 </script>
 
 <template>
