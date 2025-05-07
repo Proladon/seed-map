@@ -105,7 +105,7 @@ export function applyGaussianBlur(map, kernelSize = 3) {
           }
         }
       }
-      blurredMap[y][x] = Math.round(r / weightSum)
+      blurredMap[y][x] = r / weightSum
     }
   }
   return blurredMap
