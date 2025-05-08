@@ -1,19 +1,44 @@
-import SeededRandom from "./SeededRandom"
-import { generateOctaveNoise, applyGaussianBlur } from "./NoiseGenerator"
-import { BIOMES } from "../config/biome"
+import SeededRandom from './SeededRandom'
+import { generateOctaveNoise, applyGaussianBlur } from './NoiseGenerator'
+import { BIOMES } from '../config/biome'
+
+// Define interfaces for better type safety
+interface OceanCenter {
+  x: number
+  y: number
+  radius: number
+}
+
+interface Cell {
+  x: number
+  y: number
+  elevation?: number
+  aridity?: number
+  biome?: number
+  dist?: number
+}
+
+interface BiomePercentages {
+  [key: number]: string
+}
 
 /**
  * 地圖生成器類
  * 負責根據種子和參數生成地圖
  */
 export default class MapGenerator {
+  private seed: number
+  private size: number
+  private biomeRatios: { [key: number]: number }
+  private rng: SeededRandom
+
   /**
    * 構造函數
-   * @param {number} seed - 地圖種子
-   * @param {number} size - 地圖尺寸
-   * @param {Object} biomeRatios - 生態域比例
+   * @param seed - 地圖種子
+   * @param size - 地圖尺寸
+   * @param biomeRatios - 生態域比例
    */
-  constructor(seed, size, biomeRatios) {
+  constructor(seed: number, size: number, biomeRatios: { [key: number]: number }) {
     this.seed = seed
     this.size = size
     this.biomeRatios = biomeRatios
@@ -22,27 +47,24 @@ export default class MapGenerator {
 
   /**
    * 生成地圖
-   * @returns {Array<Array<number>>} 生成的二維地圖數組
+   * @returns 生成的二維地圖數組
    */
-  generate() {
-    const newMap = Array(this.size)
-      .fill()
+  generate(): number[][] {
+    const newMap: number[][] = Array(this.size)
+      .fill(null)
       .map(() => Array(this.size).fill(null))
 
     // 1. 生成地形特徵的噪聲圖 - 使用更大的比例尺使生態系更聚集
-    const elevationNoise = Array(this.size)
-      .fill()
+    const elevationNoise: number[][] = Array(this.size)
+      .fill(null)
       .map(() => Array(this.size).fill(0))
-    const aridityNoise = Array(this.size)
-      .fill()
+    const aridityNoise: number[][] = Array(this.size)
+      .fill(null)
       .map(() => Array(this.size).fill(0))
 
     // 2. 創建海洋中心 - 更自然的集中海洋區域
-    const oceanCenters = []
-    const numOceanCenters = Math.max(
-      1,
-      Math.min(3, Math.floor(this.rng.next() * 3) + 1)
-    )
+    const oceanCenters: OceanCenter[] = []
+    const numOceanCenters: number = Math.max(1, Math.min(3, Math.floor(this.rng.next() * 3) + 1))
 
     for (let i = 0; i < numOceanCenters; i++) {
       oceanCenters.push({
@@ -58,9 +80,7 @@ export default class MapGenerator {
         // 檢查是否在海洋中心區域
         let isInOceanZone = false
         for (const center of oceanCenters) {
-          const distToCenter = Math.sqrt(
-            Math.pow(x - center.x, 2) + Math.pow(y - center.y, 2)
-          )
+          const distToCenter = Math.sqrt(Math.pow(x - center.x, 2) + Math.pow(y - center.y, 2))
           if (distToCenter < center.radius) {
             // 在海洋中心區域內的概率隨著距離變化
             const oceanProbability = 0.95 - (distToCenter / center.radius) * 0.7
@@ -80,7 +100,7 @@ export default class MapGenerator {
               this.rng,
               6, // 更多八度音階以獲得自然海岸線
               0.5,
-              this.size / 8 // 更大尺度的特徵 - 從 this.size/12 增加到 this.size/8
+              this.size / 8, // 更大尺度的特徵 - 從 this.size/12 增加到 this.size/8
             )
 
         // 第二個噪聲圖用於沙漠分布 - 使用更大尺度
@@ -90,7 +110,7 @@ export default class MapGenerator {
           this.rng,
           4,
           0.6,
-          this.size / 6 // 更大的尺度，從 this.size/8 增加到 this.size/6
+          this.size / 6, // 更大的尺度，從 this.size/8 增加到 this.size/6
         )
       }
     }
@@ -100,7 +120,7 @@ export default class MapGenerator {
     const desertRatio = this.biomeRatios[BIOMES.DESERT] / 100
 
     // 5. 平展並排序海拔值以找到閾值
-    const sortedElevations = []
+    const sortedElevations: Cell[] = []
     for (let y = 0; y < this.size; y++) {
       for (let x = 0; x < this.size; x++) {
         sortedElevations.push({
@@ -113,12 +133,11 @@ export default class MapGenerator {
     }
 
     // 按海拔排序（低到高）
-    sortedElevations.sort((a, b) => a.elevation - b.elevation)
+    sortedElevations.sort((a, b) => (a.elevation || 0) - (b.elevation || 0))
 
     // 計算閾值
     const oceanThreshold =
-      sortedElevations[Math.floor(sortedElevations.length * oceanRatio)]
-        .elevation
+      sortedElevations[Math.floor(sortedElevations.length * oceanRatio)].elevation || 0
 
     // 6. 基於海拔分配海洋
     let assignedCells = 0
@@ -132,10 +151,8 @@ export default class MapGenerator {
     }
 
     // 7. 過濾剩餘的陸地單元並按乾旱度排序
-    const landCells = sortedElevations.filter(
-      (cell) => newMap[cell.y][cell.x] === null
-    )
-    landCells.sort((a, b) => b.aridity - a.aridity) // 高到低乾旱度
+    const landCells = sortedElevations.filter((cell) => newMap[cell.y][cell.x] === null)
+    landCells.sort((a, b) => (b.aridity || 0) - (a.aridity || 0)) // 高到低乾旱度
 
     // 8. 將沙漠分配到最乾旱的區域
     const desertCellCount = Math.floor(this.size * this.size * desertRatio)
@@ -171,28 +188,28 @@ export default class MapGenerator {
 
   /**
    * 應用高斯模糊使生態系更加聚集
-   * @param {Array<Array<number>>} map - 地圖數據
-   * @param {number} kernelSize - 模糊核心大小
-   * @returns {Array<Array<number>>} 模糊後的地圖
+   * @param map - 地圖數據
+   * @param kernelSize - 模糊核心大小
+   * @returns 模糊後的地圖
    * @private
    */
-  _applyGaussianBlur(map, kernelSize = 3) {
+  private _applyGaussianBlur(map: number[][], kernelSize: number = 3): number[][] {
     // 為了保持生物群落的整數標識，我們需要將其轉換為可模糊的格式
     const width = map.length
     const height = map[0].length
 
     // 建立三個二維陣列，每個對應一個生物群落（不包括村莊）
-    const oceanMap = Array(width)
-      .fill()
+    const oceanMap: number[][] = Array(width)
+      .fill(null)
       .map(() => Array(height).fill(0))
-    const desertMap = Array(width)
-      .fill()
+    const desertMap: number[][] = Array(width)
+      .fill(null)
       .map(() => Array(height).fill(0))
-    const plainsMap = Array(width)
-      .fill()
+    const plainsMap: number[][] = Array(width)
+      .fill(null)
       .map(() => Array(height).fill(0))
-    const villageMap = Array(width)
-      .fill()
+    const villageMap: number[][] = Array(width)
+      .fill(null)
       .map(() => Array(height).fill(0))
 
     // 分離生物群落到各自的陣列
@@ -221,8 +238,8 @@ export default class MapGenerator {
     const blurredPlains = applyGaussianBlur(plainsMap, kernelSize)
 
     // 建立新的地圖，根據最高值決定每個格子的生物群落
-    const newMap = Array(width)
-      .fill()
+    const newMap: number[][] = Array(width)
+      .fill(null)
       .map(() => Array(height).fill(0))
 
     for (let y = 0; y < width; y++) {
@@ -250,17 +267,17 @@ export default class MapGenerator {
 
   /**
    * 連接分散的海洋區域，使海岸線更自然
-   * @param {Array<Array<number>>} map - 地圖數據
-   * @returns {Array<Array<number>>} 連接後的地圖
+   * @param map - 地圖數據
+   * @returns 連接後的地圖
    * @private
    */
-  _connectOceanAreas(map) {
-    const mapCopy = JSON.parse(JSON.stringify(map))
+  private _connectOceanAreas(map: number[][]): number[][] {
+    const mapCopy: number[][] = JSON.parse(JSON.stringify(map))
     const width = map[0].length
     const height = map.length
 
     // 找出所有海洋區塊
-    const oceanCells = []
+    const oceanCells: Cell[] = []
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (mapCopy[y][x] === BIOMES.OCEAN) {
@@ -273,7 +290,7 @@ export default class MapGenerator {
     if (oceanCells.length < 5) return mapCopy
 
     // 隨機選擇幾個海洋區塊作為連接點
-    const connectPoints = []
+    const connectPoints: Cell[] = []
     const numConnectPoints = Math.min(oceanCells.length, 10)
 
     // 確保選擇分散的點
@@ -307,10 +324,7 @@ export default class MapGenerator {
               const ny = y + sy
               if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                 // 有80%機率變成海洋
-                if (
-                  this.rng.next() < 0.8 &&
-                  mapCopy[ny][nx] !== BIOMES.VILLAGE
-                ) {
+                if (this.rng.next() < 0.8 && mapCopy[ny][nx] !== BIOMES.VILLAGE) {
                   mapCopy[ny][nx] = BIOMES.OCEAN
                 }
               }
@@ -325,13 +339,13 @@ export default class MapGenerator {
 
   /**
    * 確保海洋比例達到目標值
-   * @param {Array<Array<number>>} map - 地圖數據
-   * @param {number} targetPercentage - 目標海洋百分比
-   * @returns {Array<Array<number>>} 調整後的地圖
+   * @param map - 地圖數據
+   * @param targetPercentage - 目標海洋百分比
+   * @returns 調整後的地圖
    * @private
    */
-  _ensureOceanPercentage(map, targetPercentage = 30) {
-    const mapCopy = JSON.parse(JSON.stringify(map))
+  private _ensureOceanPercentage(map: number[][], targetPercentage: number = 30): number[][] {
+    const mapCopy: number[][] = JSON.parse(JSON.stringify(map))
 
     // 計算當前海洋比例
     const biomePercentages = MapGenerator.calculateBiomePercentage(mapCopy)
@@ -345,13 +359,11 @@ export default class MapGenerator {
     // 計算需要轉換的陸地格子數量
     const totalCells = map.length * map[0].length
     const targetOceanCells = Math.ceil((totalCells * targetPercentage) / 100)
-    const currentOceanCells = Math.ceil(
-      (totalCells * currentOceanPercentage) / 100
-    )
+    const currentOceanCells = Math.ceil((totalCells * currentOceanPercentage) / 100)
     const cellsToConvert = targetOceanCells - currentOceanCells
 
     // 檢查是否是大陸邊緣（靠近海洋的陸地）
-    const isContinentEdge = (map, x, y) => {
+    const isContinentEdge = (map: number[][], x: number, y: number): boolean => {
       const dirs = [
         [-1, 0],
         [1, 0],
@@ -375,15 +387,12 @@ export default class MapGenerator {
     }
 
     // 優先轉換大陸邊緣區域，保持海洋的連續性
-    const edgeCells = []
-    const inlandCells = []
+    const edgeCells: Cell[] = []
+    const inlandCells: Cell[] = []
 
     for (let y = 0; y < map.length; y++) {
       for (let x = 0; x < map[0].length; x++) {
-        if (
-          mapCopy[y][x] !== BIOMES.OCEAN &&
-          mapCopy[y][x] !== BIOMES.VILLAGE
-        ) {
+        if (mapCopy[y][x] !== BIOMES.OCEAN && mapCopy[y][x] !== BIOMES.VILLAGE) {
           if (isContinentEdge(mapCopy, x, y)) {
             edgeCells.push({ x, y })
           } else {
@@ -407,7 +416,7 @@ export default class MapGenerator {
     // 如果邊緣格子不夠，轉換內陸格子
     if (converted < cellsToConvert) {
       // 基於距離邊緣的遠近排序內陸格子
-      const minDistanceToOcean = (map, x, y) => {
+      const minDistanceToOcean = (map: number[][], x: number, y: number): number => {
         let minDist = Number.MAX_VALUE
 
         // 使用曼哈頓距離來優化計算
@@ -422,12 +431,7 @@ export default class MapGenerator {
                 // 只檢查當前半徑的邊緣
                 const nx = x + dx
                 const ny = y + dy
-                if (
-                  nx >= 0 &&
-                  nx < map[0].length &&
-                  ny >= 0 &&
-                  ny < map.length
-                ) {
+                if (nx >= 0 && nx < map[0].length && ny >= 0 && ny < map.length) {
                   if (map[ny][nx] === BIOMES.OCEAN) {
                     minDist = radius
                     found = true
@@ -445,21 +449,13 @@ export default class MapGenerator {
 
       // 計算所有內陸格子到海洋的距離
       for (let i = 0; i < inlandCells.length; i++) {
-        inlandCells[i].dist = minDistanceToOcean(
-          mapCopy,
-          inlandCells[i].x,
-          inlandCells[i].y
-        )
+        inlandCells[i].dist = minDistanceToOcean(mapCopy, inlandCells[i].x, inlandCells[i].y)
       }
 
       // 按照到海洋的距離排序
-      inlandCells.sort((a, b) => a.dist - b.dist)
+      inlandCells.sort((a, b) => (a.dist || 0) - (b.dist || 0))
 
-      for (
-        let i = 0;
-        i < inlandCells.length && converted < cellsToConvert;
-        i++
-      ) {
+      for (let i = 0; i < inlandCells.length && converted < cellsToConvert; i++) {
         const { x, y } = inlandCells[i]
         mapCopy[y][x] = BIOMES.OCEAN
         converted++
@@ -471,12 +467,12 @@ export default class MapGenerator {
 
   /**
    * 生成村莊
-   * @param {Array<Array<number>>} map - 地圖數據
+   * @param map - 地圖數據
    * @private
    */
-  _generateVillages(map) {
+  private _generateVillages(map: number[][]): void {
     // 查找平原和沙漠單元格作為可能的村莊位置
-    const possibleVillageCells = []
+    const possibleVillageCells: Cell[] = []
     for (let y = 0; y < this.size; y++) {
       for (let x = 0; x < this.size; x++) {
         if (map[y][x] === BIOMES.PLAINS || map[y][x] === BIOMES.DESERT) {
@@ -494,17 +490,11 @@ export default class MapGenerator {
     const numClusters = Math.max(1, Math.min(3, Math.ceil(villageRatio * 20)))
     let placedVillages = 0
 
-    for (
-      let cluster = 0;
-      cluster < numClusters && placedVillages < targetVillageCells;
-      cluster++
-    ) {
+    for (let cluster = 0; cluster < numClusters && placedVillages < targetVillageCells; cluster++) {
       // 選擇一個隨機平原或沙漠單元格作為村莊種子
       if (possibleVillageCells.length === 0) break
 
-      const seedIndex = Math.floor(
-        this.rng.next() * possibleVillageCells.length
-      )
+      const seedIndex = Math.floor(this.rng.next() * possibleVillageCells.length)
       const seed = possibleVillageCells[seedIndex]
 
       // 從可用的潛在村莊單元格中移除此單元格
@@ -534,8 +524,8 @@ export default class MapGenerator {
       placedVillages++
 
       // 使用廣度優先增長將村莊擴展為緊密的聚落
-      const queue = [seed]
-      const villageCells = [seed]
+      const queue: Cell[] = [seed]
+      const villageCells: Cell[] = [seed]
 
       // 計算此聚落的目標大小
       const targetClusterSize = Math.ceil(targetVillageCells / numClusters)
@@ -545,7 +535,7 @@ export default class MapGenerator {
         placedVillages < targetVillageCells &&
         villageCells.length < targetClusterSize
       ) {
-        const current = queue.shift()
+        const current = queue.shift() as Cell
 
         // 檢查相鄰單元格（8方向連接，包括對角線）
         const directions = [
@@ -577,9 +567,7 @@ export default class MapGenerator {
             (map[ny][nx] === BIOMES.PLAINS || map[ny][nx] === BIOMES.DESERT)
           ) {
             // 越靠近中心擴展概率越高 = 更緊密的聚落
-            const distanceFromSeed = Math.sqrt(
-              Math.pow(nx - seed.x, 2) + Math.pow(ny - seed.y, 2)
-            )
+            const distanceFromSeed = Math.sqrt(Math.pow(nx - seed.x, 2) + Math.pow(ny - seed.y, 2))
             const growthProbability = 0.9 - distanceFromSeed / (this.size * 0.1)
 
             if (this.rng.next() < growthProbability) {
@@ -590,7 +578,7 @@ export default class MapGenerator {
 
               // 同時從可用潛在村莊單元格中移除
               const cellIndex = possibleVillageCells.findIndex(
-                (cell) => cell.x === nx && cell.y === ny
+                (cell) => cell.x === nx && cell.y === ny,
               )
               if (cellIndex !== -1) {
                 possibleVillageCells.splice(cellIndex, 1)
@@ -609,17 +597,10 @@ export default class MapGenerator {
     }
 
     // 如果我們沒有放置足夠的村莊，選擇一些隨機潛在村莊單元格
-    if (
-      placedVillages < targetVillageCells &&
-      possibleVillageCells.length > 0
-    ) {
+    if (placedVillages < targetVillageCells && possibleVillageCells.length > 0) {
       possibleVillageCells.sort(() => this.rng.next() - 0.5) // 隨機排序
 
-      for (
-        let i = 0;
-        i < possibleVillageCells.length && placedVillages < targetVillageCells;
-        i++
-      ) {
+      for (let i = 0; i < possibleVillageCells.length && placedVillages < targetVillageCells; i++) {
         const cell = possibleVillageCells[i]
         map[cell.y][cell.x] = BIOMES.VILLAGE
         placedVillages++
@@ -629,12 +610,12 @@ export default class MapGenerator {
 
   /**
    * 計算地圖中各生態域的百分比
-   * @param {Array<Array<number>>} mapData - 地圖數據
-   * @returns {Object} 生態域百分比
+   * @param mapData - 地圖數據
+   * @returns 生態域百分比
    */
-  static calculateBiomePercentage(mapData) {
+  static calculateBiomePercentage(mapData: number[][]): BiomePercentages {
     const totalCells = mapData.length * mapData[0].length
-    const biomeCounts = {}
+    const biomeCounts: { [key: number]: number } = {}
     Object.values(BIOMES).forEach((biomeType) => {
       biomeCounts[biomeType] = 0
     })
@@ -643,10 +624,10 @@ export default class MapGenerator {
         biomeCounts[mapData[y][x]]++
       }
     }
-    const biomePercentages = {}
+    const biomePercentages: BiomePercentages = {}
     Object.keys(biomeCounts).forEach((biomeType) => {
-      biomePercentages[biomeType] = (
-        (biomeCounts[biomeType] / totalCells) *
+      biomePercentages[Number(biomeType)] = (
+        (biomeCounts[Number(biomeType)] / totalCells) *
         100
       ).toFixed(1)
     })
@@ -655,9 +636,9 @@ export default class MapGenerator {
 
   /**
    * 生成隨機種子
-   * @returns {string} 10位數字的種子
+   * @returns 10位數字的種子
    */
-  static generateRandomSeed() {
+  static generateRandomSeed(): string {
     return String(Math.floor(1000000000 + Math.random() * 9000000000))
   }
 }
